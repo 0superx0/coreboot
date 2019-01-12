@@ -460,18 +460,12 @@ func init() {
 	RegisterPCI(0x8086, 0x9c31, GenericPCI{})
 
 	/* ME and children */
-	/*
 	for _, id := range []uint16{
-		0x1c3a, 0x1c3b, 0x1c3c, 0x1c3d,
-		0x1e3a, 0x1e3b, 0x1e3c, 0x1e3d,
+		0x8c3a, 0x8c3b,
 	} {
 		RegisterPCI(0x8086, id, GenericPCI{})
 	}
-	*/
 
 	/* Ethernet */
-	/*
-	RegisterPCI(0x8086, 0x1502, GenericPCI{})
-	RegisterPCI(0x8086, 0x1503, GenericPCI{})
-	*/
+	RegisterPCI(0x8086, 0x8c33, GenericPCI{})
 }
