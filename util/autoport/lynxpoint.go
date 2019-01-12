@@ -381,66 +381,43 @@ void mainboard_romstage_entry(unsigned long bist)
 		}
 	}
 
-	sb.WriteString(`		},`)
-	sb.WriteString(`
-
-void mainboard_rcba_config(void)
-{
+	sb.WriteString(`		},
+		.usb3_ports = {
 `)
-	sb.WriteString("}\n\n")
 
-	sb.WriteString("const struct southbridge_usb_port mainboard_usb_ports[] = {\n")
+	xpdo := PCIMap[PCIAddr{Bus: 0, Dev: 0x14, Func: 0}].ConfigDump[0xe8]
+	u3ocm := PCIMap[PCIAddr{Bus: 0, Dev: 0x14, Func: 0}].ConfigDump[0xc8:0xd0]
 
-	currentMap := map[uint32]int{
-		0x20000153: 0,
-		0x20000f57: 1,
-		0x2000055b: 2,
-		0x20000f51: 3,
-		0x2000094a: 4,
-	}
-
-	for port := uint(0); port < 14; port++ {
-		var pinmask uint32
-		OCPin := -1
-		if port < 8 {
-			pinmask = inteltool.RCBA[0x35a0]
-		} else {
-			pinmask = inteltool.RCBA[0x35a4]
-		}
-		for pin := uint(0); pin < 4; pin++ {
-			if ((pinmask >> ((port % 8) + 8*pin)) & 1) != 0 {
-				OCPin = int(pin)
-				if port >= 8 {
-					OCPin += 4
-				}
+	for port := uint(0); port < 6; port++ {
+		var port_oc int = -1
+		port_disable := (xpdo >> port) & 1
+		for oc := 0; oc < 8; oc++ {
+			if (u3ocm[oc] & (1 << port)) != 0 {
+				port_oc = oc
+				break
 			}
 		}
-		fmt.Fprintf(sb, "\t{ %d, %d, %d },\n",
-			((inteltool.RCBA[0x359c]>>port)&1)^1,
-			currentMap[inteltool.RCBA[uint16(0x3500+4*port)]],
-			OCPin)
+		if port_oc == -1 {
+			fmt.Fprintf(sb, "			{ %d, USB_OC_PIN_SKIP },\n",
+				(port_disable ^ 1))
+		} else {
+			fmt.Fprintf(sb, "			{ %d, %d },\n",
+				(port_disable ^ 1), port_oc)
+		}
 	}
-	sb.WriteString("};\n")
 
-	guessedMap := GuessSPDMap(ctx)
+	sb.WriteString(`		},
+	};
 
-	sb.WriteString(`
-void mainboard_early_init(int s3resume)
-{
-}
+	struct romstage_params romstage_params = {
+		.pei_data = &pei_data,
+		.gpio_map = &mainboard_gpio_map,
+		.rcba_config = &rcba_config[0],
+		.bist = bist,
+	};
 
-void mainboard_config_superio(void)
-{
-}
-
-/* FIXME: Put proper SPD map here. */
-void mainboard_get_spd(spd_raw_data *spd, bool id_only)
-{
-`)
-	for i, spd := range guessedMap {
-		fmt.Fprintf(sb, "\tread_spd(&spd[%d], 0x%02x, id_only);\n", i, spd)
-	}
-	sb.WriteString("}\n")
+	romstage_common(&romstage_params);
+}`)
 
 	gnvs := Create(ctx, "gnvs.c")
 	defer gnvs.Close()
