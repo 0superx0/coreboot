@@ -63,7 +63,7 @@ func init() {
 	/* C216/ivybridge */
 	RegisterPCI(0x8086, 0x1e20, azalia{})
 	/* Haswell */
-	/* RegisterPCI(0x8086, 0x0c0c, azalia{}) */
+	RegisterPCI(0x8086, 0x0c0c, azalia{})
 	/* Lynx Point */
 	RegisterPCI(0x8086, 0x8c20, azalia{})
 	RegisterPCI(0x8086, 0x9c20, azalia{})
