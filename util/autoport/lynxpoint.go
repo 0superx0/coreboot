@@ -149,7 +149,10 @@ func (b lynxpoint) Scan(ctx Context, addr PCIDevData) {
 	inteltool := ctx.InfoSource.GetInteltool()
 	b.GPIO(ctx, inteltool)
 
-	KconfigBool["SOUTHBRIDGE_INTEL_"+b.variant] = true
+	KconfigBool["SOUTHBRIDGE_INTEL_LYNXPOINT"] = true
+	if b.variant == "Lynx Point LP" {
+		KconfigBool["INTEL_LYNXPOINT_LP"] = true
+	}
 	KconfigBool["SERIRQ_CONTINUOUS_MODE"] = true
 	KconfigInt["USBDEBUG_HCD_INDEX"] = 2
 	KconfigComment["USBDEBUG_HCD_INDEX"] = "FIXME: check this"
