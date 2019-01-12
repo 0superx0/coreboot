@@ -391,7 +391,7 @@ void mainboard_get_spd(spd_raw_data *spd, bool id_only)
 	}
 	sb.WriteString("}\n")
 
-	gnvs := Create(ctx, "gnvs.c")
+	gnvs := Create(ctx, "acpi_tables.c")
 	defer gnvs.Close()
 
 	Add_gpl(gnvs)
@@ -416,7 +416,6 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 }
 `)
 
-	AddRAMStageFile("gnvs.c", "")
 }
 
 func init() {
