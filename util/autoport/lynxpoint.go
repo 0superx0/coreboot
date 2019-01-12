@@ -283,23 +283,31 @@ func (b lynxpoint) Scan(ctx Context, addr PCIDevData) {
 	defer sb.Close()
 	Add_gpl(sb)
 	sb.WriteString(`#include <stdint.h>
-#include <string.h>
-#include <lib.h>
-#include <timestamp.h>
-#include <arch/byteorder.h>
-#include <arch/io.h>
-#include <device/pci_def.h>
-#include <device/pnp_def.h>
-#include <cpu/x86/lapic.h>
-#include <arch/acpi.h>
-#include <console/console.h>
-#include "northbridge/intel/sandybridge/sandybridge.h"
-#include "northbridge/intel/sandybridge/raminit_native.h"
-#include "southbridge/intel/lynxpoint/pch.h"
+#include <cpu/intel/romstage.h>
+#include <cpu/intel/haswell/haswell.h>
+#include <northbridge/intel/haswell/haswell.h>
+#include <northbridge/intel/haswell/pei_data.h>
 #include <southbridge/intel/common/gpio.h>
-#include <arch/cpu.h>
-#include <cpu/x86/msr.h>
+#include <southbridge/intel/lynxpoint/pch.h>
 
+static const struct rcba_config_instruction rcba_config[] = {
+`)
+	RestoreDIRRoute(sb, "D31IR", uint16(inteltool.RCBA[0x3140]))
+	RestoreDIRRoute(sb, "D29IR", uint16(inteltool.RCBA[0x3144]))
+	RestoreDIRRoute(sb, "D28IR", uint16(inteltool.RCBA[0x3146]))
+	RestoreDIRRoute(sb, "D27IR", uint16(inteltool.RCBA[0x3148]))
+	RestoreDIRRoute(sb, "D26IR", uint16(inteltool.RCBA[0x314c]))
+	RestoreDIRRoute(sb, "D25IR", uint16(inteltool.RCBA[0x3150]))
+	RestoreDIRRoute(sb, "D22IR", uint16(inteltool.RCBA[0x315c]))
+	RestoreDIRRoute(sb, "D20IR", uint16(inteltool.RCBA[0x3160]))
+
+	sb.WriteString(`
+	RCBA_RMW_REG_32(FD, ~0, PCH_DISABLE_ALWAYS),
+
+	RCBA_END_CONFIG,
+};`)
+
+	sb.WriteString(`
 void pch_enable_lpc(void)
 {
 `)
