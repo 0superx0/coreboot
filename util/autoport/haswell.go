@@ -110,11 +110,9 @@ func (i haswellmc) Scan(ctx Context, addr PCIDevData) {
 	PutPCIDev(addr, "Host bridge")
 
 	/* FIXME:XX some configs are unsupported.  */
-	KconfigBool["SANDYBRIDGE_IVYBRIDGE_LVDS"] = true
 
-	KconfigBool["CPU_INTEL_SOCKET_RPGA989"] = true
-	KconfigBool["NORTHBRIDGE_INTEL_"+i.variant+"BRIDGE"] = true
-	KconfigBool["USE_NATIVE_RAMINIT"] = true
+	KconfigBool["CPU_INTEL_HASWELL"] = true
+	KconfigBool["NORTHBRIDGE_INTEL_HASWELL"] = true
 	KconfigBool["INTEL_INT15"] = true
 	KconfigBool["HAVE_ACPI_TABLES"] = true
 	KconfigBool["HAVE_ACPI_RESUME"] = true
@@ -122,7 +120,7 @@ func (i haswellmc) Scan(ctx Context, addr PCIDevData) {
 	KconfigInt["MAX_CPUS"] = 8
 
 	DSDTIncludes = append(DSDTIncludes, DSDTInclude{
-		File: "cpu/intel/model_206ax/acpi/cpu.asl",
+		File: "cpu/intel/common/acpi/cpu.asl",
 	})
 
 	DSDTPCI0Includes = append(DSDTPCI0Includes, DSDTInclude{
