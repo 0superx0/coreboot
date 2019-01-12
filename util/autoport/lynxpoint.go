@@ -422,7 +422,7 @@ void mainboard_romstage_entry(unsigned long bist)
 	romstage_common(&romstage_params);
 }`)
 
-	gnvs := Create(ctx, "gnvs.c")
+	gnvs := Create(ctx, "acpi_tables.c")
 	defer gnvs.Close()
 
 	Add_gpl(gnvs)
@@ -447,7 +447,6 @@ void acpi_create_gnvs(global_nvs_t *gnvs)
 }
 `)
 
-	AddRAMStageFile("gnvs.c", "")
 }
 
 func init() {
