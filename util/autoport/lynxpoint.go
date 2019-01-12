@@ -308,18 +308,81 @@ static const struct rcba_config_instruction rcba_config[] = {
 };`)
 
 	sb.WriteString(`
-void pch_enable_lpc(void)
+
+void mainboard_config_superio(void)
 {
+}
+
+void mainboard_romstage_entry(unsigned long bist)
+{
+	struct pei_data pei_data = {
+		.pei_version = PEI_VERSION,
+		.mchbar = (uintptr_t)DEFAULT_MCHBAR,
+		.dmibar = (uintptr_t)DEFAULT_DMIBAR,
+		.epbar = DEFAULT_EPBAR,
+		.pciexbar = DEFAULT_PCIEXBAR,
+		.smbusbar = SMBUS_IO_BASE,
+		.wdbbar = 0x4000000,
+		.wdbsize = 0x1000,
+		.hpet_address = HPET_ADDR,
+		.rcba = (uintptr_t)DEFAULT_RCBA,
+		.pmbase = DEFAULT_PMBASE,
+		.gpiobase = DEFAULT_GPIOBASE,
+		.temp_mmio_base = 0xfed08000,
+		.system_type = 1, /* desktop/server, FIXME: check this */
+		.tseg_size = CONFIG_SMM_TSEG_SIZE,
+		.spd_addresses = { 0xa0, 0xa2, 0xa4, 0xa6 }, /* FIXME: check this */
+		.ec_present = 0,
+		.dimm_channel0_disabled = 0, /* FIXME: leave channel 0 enabled */
+		.dimm_channel1_disabled = 0, /* FIXME: leave channel 1 enabled */
+		.max_ddr3_freq = 1600,
+		.usb2_ports = {
+			/* Length, Enable, OCn#, Location */
 `)
-	RestorePCI16Simple(sb, addr, 0x82)
-	RestorePCI32Simple(sb, addr, 0x84)
-	RestorePCI32Simple(sb, addr, 0x88)
-	RestorePCI32Simple(sb, addr, 0x8c)
-	RestorePCI32Simple(sb, addr, 0x90)
 
-	RestorePCI16Simple(sb, addr, 0x80)
+	pdo1 := PCIMap[PCIAddr{Bus: 0, Dev: 0x1d, Func: 0}].ConfigDump[0x64]
+	ocmap1 := PCIMap[PCIAddr{Bus: 0, Dev: 0x1d, Func: 0}].ConfigDump[0x74:0x78]
+	pdo2 := PCIMap[PCIAddr{Bus: 0, Dev: 0x1a, Func: 0}].ConfigDump[0x64]
+	ocmap2 := PCIMap[PCIAddr{Bus: 0, Dev: 0x1a, Func: 0}].ConfigDump[0x74:0x78]
 
-	sb.WriteString(`}
+	for port := uint(0); port < 14; port++ {
+		var port_oc int = -1
+		var port_pos string
+		var port_disable uint8
+
+		if port < 8 {
+			port_disable = (pdo1 >> port) & 1
+			for oc := 0; oc < 4; oc++ {
+				if ((ocmap1[oc] & (1 << port)) != 0) {
+					port_oc = oc
+					break
+				}
+			}
+		} else {
+			port_disable = (pdo2 >> (port - 8)) & 1
+			for oc := 0; oc < 4; oc++ {
+				if ((ocmap2[oc] & (1 << (port - 8))) != 0) {
+					port_oc = oc + 4
+					break
+				}
+			}
+		}
+		if port_disable == 1 {
+			port_pos = "USB_PORT_SKIP"
+		} else {
+			port_pos = "USB_PORT_BACK_PANEL"
+		}
+		if port_oc == -1 {
+			fmt.Fprintf(sb, "			{ 0x0040, %d, USB_OC_PIN_SKIP, %s },\n",
+				(port_disable ^ 1), port_pos)
+		} else {
+			fmt.Fprintf(sb, "			{ 0x0040, %d, %d, %s },\n",
+				(port_disable ^ 1), port_oc, port_pos)
+		}
+	}
+
+	sb.WriteString(`		},`)
+	sb.WriteString(`
 
 void mainboard_rcba_config(void)
 {
